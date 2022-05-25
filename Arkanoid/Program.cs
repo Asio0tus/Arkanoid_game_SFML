@@ -2,6 +2,7 @@
 using SFML.Graphics;
 using SFML.Window;
 using SFML.System;
+using SFML.Audio;
 
 namespace Arkanoid
 {
@@ -15,6 +16,8 @@ namespace Arkanoid
 
         static Sprite platform;
         static Sprite[] blocks;
+
+        static Ball ball;
 
         public static void SetStartPosition()
         {
@@ -30,7 +33,7 @@ namespace Arkanoid
             }
 
             platform.Position = new Vector2f(400, 500);
-
+            ball.sprite.Position = new Vector2f(375, 400);
         }
 
 
@@ -45,6 +48,7 @@ namespace Arkanoid
             platformkTexture = new Texture("Stick.png");
             blockTexture = new Texture("Block.png");
 
+            ball = new Ball(ballTexture);
             platform = new Sprite(platformkTexture);
             blocks = new Sprite[100];
 
@@ -60,9 +64,28 @@ namespace Arkanoid
 
                 window.DispatchEvents();
 
+                if(Mouse.IsButtonPressed(Mouse.Button.Left) == true)
+                {
+                    ball.Start(5, new Vector2f(0, -1));
+                }
+
+                ball.Move(new Vector2i(0,0), new Vector2i(800, 600));
+
+                ball.CheckCollision(platform, "Platform");
+                for (int i = 0; i < blocks.Length; i++)
+                {
+                    if(ball.CheckCollision(blocks[i], "Block") == true)
+                    {
+                        blocks[i].Position = new Vector2f(1000, 1000);
+                        break;
+                    }
+                }
+                
+
                 platform.Position = new Vector2f(Mouse.GetPosition(window).X - platform.TextureRect.Width / 2, platform.Position.Y);
 
-
+                //Draw
+                window.Draw(ball.sprite);
                 window.Draw(platform);
 
                 for(int i = 0; i < blocks.Length; i++)
