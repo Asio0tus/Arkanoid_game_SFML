@@ -10,6 +10,7 @@ class Ball
     public Sprite sprite;
     private float speed;
     private Vector2f direction;
+    public int health = 3;
 
     public Ball(Texture texture)
     {
@@ -39,6 +40,7 @@ class Ball
             direction.Y *= -1;
         }
     }
+        
 
     public bool CheckCollision(Sprite sprite, string tag)
     {
@@ -54,6 +56,8 @@ class Ball
             if(tag == "Block")
             {                
                 direction.Y *= -1;
+                float f = ((this.sprite.Position.X + this.sprite.Texture.Size.X * 0.5f) - (sprite.Position.X + sprite.Texture.Size.X * 0.5f)) / sprite.Texture.Size.X;
+                direction.X = f * 2;
             }
             
 

@@ -12,28 +12,29 @@ namespace Arkanoid
 
         static Texture ballTexture;
         static Texture platformkTexture;
-        static Texture blockTexture;
+        static Texture blockTextureStrong1;
+        static Texture blockTextureStrong2;
+        static Texture blockTextureStrong3;
+        static Texture backgroundTexture;
+        static Texture butttonLevel1Texture;
+        static Texture butttonLevel2Texture;
+        static Texture butttonLevel3Texture;
 
-        static Sprite platform;
-        static Sprite[] blocks;
+        static Sprite platform;        
+        static Field field;
 
         static Ball ball;
+        static MainMenu mainMenu;
+        
+
+        static bool play = false;
+        static bool start = false;
+        static bool gameOver = false;
 
         public static void SetStartPosition()
-        {
-            int index = 0;
-
-            for(int y = 0; y < 10; y++)
-            {
-                for(int x = 0; x < 10; x++)
-                {                    
-                    blocks[index].Position = new Vector2f(x * (blocks[index].TextureRect.Width + 15) + 75, y * (blocks[index].TextureRect.Height + 15) + 50);
-                    index++;
-                }
-            }
-
+        {            
             platform.Position = new Vector2f(400, 500);
-            ball.sprite.Position = new Vector2f(375, 400);
+            ball.sprite.Position = new Vector2f(platform.Position.X + platform.Texture.Size.X * 0.5f, platform.Position.Y - ball.sprite.Texture.Size.Y);
         }
 
 
@@ -46,54 +47,123 @@ namespace Arkanoid
 
             ballTexture = new Texture("Ball.png");
             platformkTexture = new Texture("Stick.png");
-            blockTexture = new Texture("Block.png");
+            blockTextureStrong1 = new Texture("Block3.png");
+            blockTextureStrong2 = new Texture("Block2.png");
+            blockTextureStrong3 = new Texture("Block1.png");
+            backgroundTexture = new Texture("background.png");
+            butttonLevel1Texture = new Texture("buttonlevel1.png");
+            butttonLevel2Texture = new Texture("buttonlevel2.png");
+            butttonLevel3Texture = new Texture("buttonlevel3.png");
 
             ball = new Ball(ballTexture);
             platform = new Sprite(platformkTexture);
-            blocks = new Sprite[100];
+           
+            field = new Field();
 
-            for( int i = 0; i < blocks.Length; i++) blocks[i] = new Sprite(blockTexture);
-            
+            mainMenu = new MainMenu(backgroundTexture, butttonLevel1Texture, butttonLevel2Texture, butttonLevel3Texture);
 
-            SetStartPosition();
+                      
+                        
 
 
             while (window.IsOpen == true)
             {
-                window.Clear();
-
-                window.DispatchEvents();
-
-                if(Mouse.IsButtonPressed(Mouse.Button.Left) == true)
+                while(play == false)
                 {
-                    ball.Start(5, new Vector2f(0, -1));
-                }
+                    window.Clear();
 
-                ball.Move(new Vector2i(0,0), new Vector2i(800, 600));
+                    window.DispatchEvents();
 
-                ball.CheckCollision(platform, "Platform");
-                for (int i = 0; i < blocks.Length; i++)
-                {
-                    if(ball.CheckCollision(blocks[i], "Block") == true)
+                    if (Mouse.IsButtonPressed(Mouse.Button.Left) == true)
                     {
-                        blocks[i].Position = new Vector2f(1000, 1000);
-                        break;
+                        mainMenu.ChoiceLevel(window);
                     }
+
+                    if (mainMenu.level > 0)
+                    {
+                        play = true;
+                        field.GenerateField(mainMenu.level, blockTextureStrong1, blockTextureStrong2, blockTextureStrong3);
+                        SetStartPosition();
+                    }
+                        
+
+                    
+
+                    window.Draw(mainMenu.background);
+                    window.Draw(mainMenu.butttonLevel1);
+                    window.Draw(mainMenu.butttonLevel2);
+                    window.Draw(mainMenu.butttonLevel3);
+
+                    window.Display();
                 }
-                
 
-                platform.Position = new Vector2f(Mouse.GetPosition(window).X - platform.TextureRect.Width / 2, platform.Position.Y);
-
-                //Draw
-                window.Draw(ball.sprite);
-                window.Draw(platform);
-
-                for(int i = 0; i < blocks.Length; i++)
+                while (play == true)
                 {
-                    window.Draw(blocks[i]);
-                }
 
-                window.Display();
+
+                    window.Clear();
+
+                    window.DispatchEvents();
+
+
+                    if (start == false)
+                    {
+                        if (Mouse.IsButtonPressed(Mouse.Button.Left) == true)
+                        {
+                            ball.Start(5, new Vector2f(0, -1));
+                            start = true;
+                        }
+
+                        ball.sprite.Position = new Vector2f(platform.Position.X + platform.Texture.Size.X * 0.5f - ball.sprite.Texture.Size.X * 0.5f, platform.Position.Y - ball.sprite.Texture.Size.Y);
+
+                    }
+
+                    if (start == true)
+                    {
+                        ball.Move(new Vector2i(0, 0), new Vector2i(800, 600));
+
+                        if (ball.sprite.Position.Y > 800)
+                        {
+                            ball.health -= 1;
+                            start = false;
+                        }
+
+                    }
+
+                    ball.CheckCollision(platform, "Platform");
+                    for (int i = 0; i < field.blocks.Length; i++)
+                    {
+                        if (ball.CheckCollision(field.blocks[i].sprite, "Block") == true)
+                        {
+                            field.blocks[i].strength -= 1;
+
+                            if (field.blocks[i].strength == 0) field.blocks[i].sprite.Position = new Vector2f(1000, 1000);
+                            if (field.blocks[i].strength == 1) field.blocks[i].sprite.Texture = blockTextureStrong1;
+                            if (field.blocks[i].strength == 2) field.blocks[i].sprite.Texture = blockTextureStrong2;
+
+                            break;
+                        }
+                    }
+
+
+
+                    platform.Position = new Vector2f(Mouse.GetPosition(window).X - platform.TextureRect.Width / 2, platform.Position.Y);
+                    if (Mouse.GetPosition(window).X < 0 + platform.Texture.Size.X * 0.5f) platform.Position = new Vector2f(0, platform.Position.Y);
+                    if (Mouse.GetPosition(window).X > 800 - platform.Texture.Size.X * 0.5f) platform.Position = new Vector2f(800 - platform.Texture.Size.X, platform.Position.Y);
+
+
+
+                    //Draw
+                    window.Draw(ball.sprite);
+                    window.Draw(platform);
+
+                    for (int i = 0; i < field.blocks.Length; i++)
+                    {
+                        window.Draw(field.blocks[i].sprite);
+                    }
+
+                    window.Display();
+                }
 
             }
 
