@@ -19,9 +19,16 @@ namespace Arkanoid
         static Texture butttonLevel1Texture;
         static Texture butttonLevel2Texture;
         static Texture butttonLevel3Texture;
+        static Texture heartTexture;
+        static Texture winTexture;
+        static Texture loseTexture;
 
         static Sprite platform;        
         static Field field;
+        static Sprite winSprite;
+        static Sprite loseSprite;
+        static Sprite[] health;
+
 
         static Ball ball;
         static MainMenu mainMenu;
@@ -29,12 +36,28 @@ namespace Arkanoid
 
         static bool play = false;
         static bool start = false;
+        static int gameResult;
         static bool gameOver = false;
 
         public static void SetStartPosition()
         {            
             platform.Position = new Vector2f(400, 500);
             ball.sprite.Position = new Vector2f(platform.Position.X + platform.Texture.Size.X * 0.5f, platform.Position.Y - ball.sprite.Texture.Size.Y);
+            
+        }
+
+        public static int CheckGameResult()
+        {
+            int strong = 0;
+            int health = ball.health;
+            for(int i = 0; i < field.blocks.Length; i++)
+            {
+                strong += field.blocks[i].strength;
+            }
+
+            if (strong == 0) return 1;
+            if (health == 0) return 2;
+            else return 0;
         }
 
 
@@ -54,11 +77,23 @@ namespace Arkanoid
             butttonLevel1Texture = new Texture("buttonlevel1.png");
             butttonLevel2Texture = new Texture("buttonlevel2.png");
             butttonLevel3Texture = new Texture("buttonlevel3.png");
+            heartTexture = new Texture("healthheart.png");
+            winTexture = new Texture("winpic.png");
+            loseTexture = new Texture("losepic.png");
 
-            ball = new Ball(ballTexture);
+            
             platform = new Sprite(platformkTexture);
-           
-            field = new Field();
+            
+            ball = new Ball(ballTexture);
+            Sprite[] health = new Sprite[3];
+            for (int i = 0; i < ball.health; i++)
+            {
+                health[i] = new Sprite(heartTexture);
+            }
+
+            winSprite = new Sprite(winTexture);
+            loseSprite = new Sprite(loseTexture);
+            
 
             mainMenu = new MainMenu(backgroundTexture, butttonLevel1Texture, butttonLevel2Texture, butttonLevel3Texture);
 
@@ -68,7 +103,8 @@ namespace Arkanoid
 
             while (window.IsOpen == true)
             {
-                while(play == false)
+                window.SetFramerateLimit(60);
+                while (play == false)
                 {
                     window.Clear();
 
@@ -81,9 +117,15 @@ namespace Arkanoid
 
                     if (mainMenu.level > 0)
                     {
-                        play = true;
+                        play = true;                                              
+                        
+                        field = new Field();
                         field.GenerateField(mainMenu.level, blockTextureStrong1, blockTextureStrong2, blockTextureStrong3);
                         SetStartPosition();
+                        for (int i = 0; i < ball.health; i++)
+                        {
+                            health[i].Position = new Vector2f(i * health[i].Texture.Size.X + 15, 550);
+                        }
                     }
                         
 
@@ -145,13 +187,14 @@ namespace Arkanoid
                         }
                     }
 
-
+                    
+                    
 
                     platform.Position = new Vector2f(Mouse.GetPosition(window).X - platform.TextureRect.Width / 2, platform.Position.Y);
                     if (Mouse.GetPosition(window).X < 0 + platform.Texture.Size.X * 0.5f) platform.Position = new Vector2f(0, platform.Position.Y);
                     if (Mouse.GetPosition(window).X > 800 - platform.Texture.Size.X * 0.5f) platform.Position = new Vector2f(800 - platform.Texture.Size.X, platform.Position.Y);
 
-
+                    
 
                     //Draw
                     window.Draw(ball.sprite);
@@ -162,7 +205,49 @@ namespace Arkanoid
                         window.Draw(field.blocks[i].sprite);
                     }
 
+                    for (int i = 0; i < ball.health; i++)
+                    {
+                        window.Draw(health[i]);
+                    }
+
+                    
+
                     window.Display();
+
+                    gameResult = CheckGameResult();
+                    if (gameResult > 0)
+                    {
+                        play = false;
+                        gameOver = true;
+                        field = null;
+                        ball.health = 3;
+                        mainMenu.level = 0;
+                    }
+                }
+
+                while(gameOver == true)
+                {
+                    window.SetFramerateLimit(1);
+                    window.Clear();
+
+                    window.DispatchEvents();
+                                        
+
+                    if (gameResult == 1)
+                    {
+                        window.Draw(winSprite);
+                    }
+
+                    if (gameResult == 2)
+                    {
+                        window.Draw(loseSprite);
+                    }
+                       
+                    
+                    window.Display();
+                    
+                    gameResult = 0;
+                    break;
                 }
 
             }
